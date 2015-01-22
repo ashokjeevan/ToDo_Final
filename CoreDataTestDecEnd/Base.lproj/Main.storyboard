@@ -108,6 +108,7 @@
                                             <outlet property="countryLabel" destination="TzO-G2-1N8" id="bSH-6W-ztF"/>
                                             <outlet property="nameLabel" destination="Gxn-Iw-BUf" id="KI4-Sg-Prc"/>
                                             <outlet property="numberLabel" destination="cMh-cE-vdJ" id="Ouw-Cq-OKD"/>
+                                            <segue destination="AvK-03-ggl" kind="show" id="x1U-sq-ynX"/>
                                         </connections>
                                     </tableViewCell>
                                 </prototypes>
@@ -332,4 +333,7 @@
             <point key="canvasLocation" x="304.5" y="1026.75"/>
         </scene>
     </scenes>
+    <inferredMetricsTieBreakers>
+        <segue reference="tvj-R3-fua"/>
+    </inferredMetricsTieBreakers>
 </document>

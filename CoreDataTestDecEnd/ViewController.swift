@@ -8,6 +8,7 @@
 
 import UIKit
 import CoreData
+import EventKit
 
 
 class ViewController: UIViewController, UITableViewDataSource,UITableViewDelegate {
@@ -17,7 +18,7 @@ class ViewController: UIViewController, UITableViewDataSource,UITableViewDelegat
     //Insert below the tableView IBOutlet
     //var names = [String]()
     var people = [NSManagedObject]()
-    
+    var count = 0
     
     @IBAction func addName(sender: AnyObject) {
         
@@ -83,7 +84,6 @@ class ViewController: UIViewController, UITableViewDataSource,UITableViewDelegat
                 as customTableCell
             
             let person = people[indexPath.row]
-//            cell.textLabel.text = person.valueForKey("name") as String?
             
             cell.nameLabel.text = person.valueForKey("name") as String?
             cell.numberLabel.text = person.valueForKey("number") as String?
@@ -93,17 +93,16 @@ class ViewController: UIViewController, UITableViewDataSource,UITableViewDelegat
     
     func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath)
     {
-        
+        let selectedItem = people[indexPath.row]
     }
     
     func saveName(name: String) {
-        //1
+
         let appDelegate =
         UIApplication.sharedApplication().delegate as AppDelegate
         
         let managedContext = appDelegate.managedObjectContext!
         
-        //2
         let entity =  NSEntityDescription.entityForName("Person",
             inManagedObjectContext:
             managedContext)
@@ -111,45 +110,43 @@ class ViewController: UIViewController, UITableViewDataSource,UITableViewDelegat
         let person = NSManagedObject(entity: entity!,
             insertIntoManagedObjectContext:managedContext)
         
-        //3
         person.setValue(name, forKey: "name")
         
-        //4
         var error: NSError?
         if !managedContext.save(&error) {
             println("Could not save \(error), \(error?.userInfo)")
         }  
-        //5
+
         people.append(person)
     }
     
     override func viewWillAppear(animated: Bool) {
         super.viewWillAppear(animated)
         
-//        self .getDataFromDatabase()
-        
+        var timer = NSTimer.scheduledTimerWithTimeInterval(0.9, target: self, selector: Selector("reload"), userInfo: nil, repeats: false)
+        timer.fire()
+        }
+
+    func reloadDataForTableView() {
         getDataFromDatabase()
+        
         self.tableView.reloadData()
         var frameSize = self.tableView.frame
         frameSize.size.height = self.view.frame.height
         self.tableView.frame = frameSize
+    
     }
     
+    //get the values from the database
     func getDataFromDatabase()
     {
-        //start copy - from ViewController
-        
-        
-        //1
         let appDelegate =
         UIApplication.sharedApplication().delegate as AppDelegate
         
         let managedContext = appDelegate.managedObjectContext!
         
-        //2
         let fetchRequest = NSFetchRequest(entityName:"Person")
         
-        //3
         var error: NSError?
         
         let fetchedResults =
@@ -166,25 +163,71 @@ class ViewController: UIViewController, UITableViewDataSource,UITableViewDelegat
                     var tempName = people[index].valueForKey("name") as String!
                     var tempNumber = people[index].valueForKey("number") as String!
                     var tempCountry = people[index].valueForKey("country") as String!
-                
+                    var tempID = people[index].valueForKey("reminderText") as String!
+
                     println(tempName + " " + tempNumber + " " + tempCountry)
+                    println(tempID)
                 }
             }
-            //let iiiii = peopl
-            
-            //let person = people[indexPath.row]
-            //cell.textLabel.text = person.valueForKey("name") as String?
-            
             
         } else {
             println("Could not fetch \(error), \(error!.userInfo)")
         }
         
-        //stop
-        
-        
-        
-
     }
+    
+    func tableView(tableView: UITableView, canEditRowAtIndexPath indexPath: NSIndexPath) -> Bool {
+        return true
+    }
+    
+    func tableView(tableView: UITableView, commitEditingStyle editingStyle: UITableViewCellEditingStyle, forRowAtIndexPath indexPath: NSIndexPath) {
+        
+        let appDelegate =
+        UIApplication.sharedApplication().delegate as AppDelegate
+        
+        let managedContext = appDelegate.managedObjectContext!
+        
+        if(editingStyle == .Delete ) {
+            // Find the LogItem object the user is trying to delete
+            let logItemToDelete = people[indexPath.row]
+            
+            var tempName = people[indexPath.row].valueForKey("name") as String!
+            var tempID = people[indexPath.row].valueForKey("reminderText") as String!
+
+            
+            println(" name \(tempName)")
+            println(" tempCountry \(tempID))")
+            var eventStore : EKEventStore = EKEventStore()
+            
+            var eventToRemove: EKEvent
+        
+            var reminderIdentifier = logItemToDelete.valueForKey("reminderText") as String!
+
+            eventToRemove =  eventStore.eventWithIdentifier(reminderIdentifier)
+            
+            eventStore.removeEvent(eventToRemove, span: EKSpanThisEvent , commit:true, error: nil)
+            // Delete it from the managedObjectContext
+            managedContext.deleteObject(logItemToDelete)
+            
+            reloadDataForTableView()
+            
+            var error: NSError?
+            if !managedContext.save(&error) {
+                println("Could not save \(error), \(error?.userInfo)")
+            }
+            
+            // Tell the table view to animate out that row
+//            tableView.deleteRowsAtIndexPaths([indexPath], withRowAnimation: .Automatic)
+        }
+    }
+ 
+ 
+
+    func reload()
+    {
+        println("reload")
+        reloadDataForTableView()
+        
+        }
 }
 
